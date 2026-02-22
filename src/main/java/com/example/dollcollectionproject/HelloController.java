@@ -31,9 +31,9 @@ public class HelloController {
     private TextField nameInput;
     // Creates link to our Database Manager
     private DatabaseManager dbManager = new DatabaseManager();
-    // Stores the path from the picker
+    // Stores the path from the picker, and store last folder for next use :)
     private String selectedImagePath = "";
-
+    private File lastDirectory = null;
 
 
     // Behaves just like main method in normal java code
@@ -106,6 +106,11 @@ public class HelloController {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Select Doll Image");
 
+        //----NEW: FOLDER MEMORY CHECKED----
+        if (lastDirectory != null && lastDirectory.exists()) {
+            fileChooser.setInitialDirectory(lastDirectory);
+        }
+
         // Ensure the user only sees image folders
         fileChooser.getExtensionFilters().add(
                 new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg")
@@ -115,6 +120,8 @@ public class HelloController {
         File selectedFile = fileChooser.showOpenDialog(stage);
 
         if (selectedFile != null) {
+            //----SAVE THE FOLDER FOR NEXT TIME----
+            lastDirectory = selectedFile.getParentFile();
             // We save the path so we can use it in the Save function below
             selectedImagePath = selectedFile.getAbsolutePath();
             System.out.println("Image ready: " + selectedImagePath);
@@ -123,8 +130,10 @@ public class HelloController {
             Image img = new Image("file:" + selectedImagePath);
             imagePreview.setImage(img);
 
-            // OPTIONAL: Auto-fill the name field with the filename
-            nameInput.setText(selectedFile.getName().split("\\.")[0]);
+            // SMART NAME FILL: Only fill if the user hasn't typed anything yet
+            if (nameInput.getText().trim().isEmpty()) {
+                nameInput.setText(selectedFile.getName().split("\\.")[0]);
+            }
 
             System.out.println("Image ready and indicator updated: " + selectedImagePath);
         }
