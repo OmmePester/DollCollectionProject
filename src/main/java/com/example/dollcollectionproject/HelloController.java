@@ -1,13 +1,14 @@
 package com.example.dollcollectionproject;
 
 import com.example.dollcollectionproject.model.Doll;
-import com.example.dollcollectionproject.model.DollSeeder;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -22,6 +23,9 @@ public class HelloController {
     // This @FXML tag tells Java to look for the ID "dollList" in your FXML file
     @FXML
     private ListView<Doll> dollList;
+    // This is for selected image preview
+    @FXML
+    private ImageView imagePreview;
     // The field where you type the Doll's name
     @FXML
     private TextField nameInput;
@@ -35,11 +39,11 @@ public class HelloController {
     // Behaves just like main method in normal java code
     @FXML
     public void initialize() {
-        // Grab the list of dolls from your seeder
-        List<Doll> data = DollSeeder.getSeedData();
-        dollList.getItems().clear();    // clean after just in case
-
-        // Just add the whole Doll object to the list now
+        // Ask the DatabaseManager for the REAL list of dolls
+        List<Doll> data = dbManager.getAllDolls();
+        // Clean before using, just in case
+        dollList.getItems().clear();
+        // Just add the whole Doll objects
         dollList.getItems().addAll(data);
 
         // Set the "Cell Factory" (The instructions on how to draw a Doll)
@@ -63,22 +67,28 @@ public class HelloController {
 
             @Override
             protected void updateItem(Doll doll, boolean empty) {
+                // This tells parent ListCell provided by JavaFX to prepare basic setup before we start customizing
                 super.updateItem(doll, empty);
 
                 if (empty || doll == null) {
                     setText(null);
                     setGraphic(null);
                 } else {
-                    // 1. Set the text
-                    setText(doll.getName() + " (" + doll.getYear() + ")");
+//////LATER UNCOMMENT:
+//                    String hintText = (doll.getHint() == null || doll.getHint().isEmpty())
+//                            ? ""
+//                            : " (Hint: " + doll.getHint() + ")";
 
-                    // 2. Load the image from your 'closet'
+                    // 1. Set the text
+                    setText(doll.getName());
+/////////LATER ADD: setText(doll.getName() + hintText);
+                    // 2. Load the image from your 'closet', but now with full path (for sql etc.)
                     try {
-                        javafx.scene.image.Image img = new javafx.scene.image.Image(
-                                getClass().getResourceAsStream(doll.getImagePath())
-                        );
+                        // We add "file:" to the start so Java knows to look on your C: drive
+                        javafx.scene.image.Image img = new javafx.scene.image.Image("file:" + doll.getImagePath());
+
                         imageView.setImage(img);
-                        imageView.setFitWidth(50);  // Make it a small thumbnail
+                        imageView.setFitWidth(75);  // Make it a small thumbnail
                         imageView.setPreserveRatio(true);
 
                         setGraphic(imageView); // Put the image next to the text
@@ -102,13 +112,23 @@ public class HelloController {
         );
 
         Stage stage = (Stage) nameInput.getScene().getWindow();
-        File file = fileChooser.showOpenDialog(stage);
+        File selectedFile = fileChooser.showOpenDialog(stage);
 
-        if (file != null) {
+        if (selectedFile != null) {
             // We save the path so we can use it in the Save function below
-            selectedImagePath = file.getAbsolutePath();
+            selectedImagePath = selectedFile.getAbsolutePath();
             System.out.println("Image ready: " + selectedImagePath);
+
+            // This is where we use imagePreview and view selected image before saving
+            Image img = new Image("file:" + selectedImagePath);
+            imagePreview.setImage(img);
+
+            // OPTIONAL: Auto-fill the name field with the filename
+            nameInput.setText(selectedFile.getName().split("\\.")[0]);
+
+            System.out.println("Image ready and indicator updated: " + selectedImagePath);
         }
+
     }
 
     // This button actually talks to the SQL database. It's for actual save.
@@ -119,10 +139,12 @@ public class HelloController {
         if (!name.isEmpty() && !selectedImagePath.isEmpty()) {
             // Adding the doll to the SQL 'closet.db'
             dbManager.addDoll(name, selectedImagePath);
-
-            // Clearing everything for the next doll
+            // REFRESH THE LIST:
+            dollList.getItems().setAll(dbManager.getAllDolls());
+            // Clearing everything for the next doll sql entry
             nameInput.clear();
             selectedImagePath = "";
+            imagePreview.setImage(null);
             System.out.println("Doll added successfully!");
         } else {
             System.out.println("Error: Name or Image missing!");

@@ -1,24 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
 
-<AnchorPane prefHeight="494.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.dollcollectionproject.DollDetailController">
-   <children>
-      <VBox alignment="CENTER" layoutX="178.0" prefHeight="383.0" prefWidth="245.0">
+<ScrollPane fitToWidth="true" hbarPolicy="NEVER" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.dollcollectionproject.DollDetailController">
+   <content>
+      <VBox alignment="CENTER" prefHeight="600.0" prefWidth="400.0" spacing="20.0">
          <children>
             <ImageView fx:id="detailImage" fitHeight="150.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" />
             <Label fx:id="detailName" alignment="CENTER" contentDisplay="CENTER" prefHeight="30.0" prefWidth="245.0" text="Name" />
-            <TextArea fx:id="descriptionArea" prefHeight="170.0" prefWidth="245.0" />
+            <TextArea fx:id="descriptionArea" prefHeight="99.0" prefWidth="360.0" />
+            <HBox alignment="CENTER" prefHeight="85.0" prefWidth="360.0">
+               <children>
+                  <Button fx:id="saveButton" mnemonicParsing="false" onAction="#handleSaveDescription" prefHeight="40.0" prefWidth="90.0" text="Save">
+                     <HBox.margin>
+                        <Insets right="20.0" />
+                     </HBox.margin>
+                  </Button>
+                  <Button fx:id="clearButton" mnemonicParsing="false" onAction="#handleClearDescription" prefHeight="40.0" prefWidth="90.0" text="Clear">
+                     <HBox.margin>
+                        <Insets left="20.0" />
+                     </HBox.margin>
+                  </Button>
+               </children>
+            </HBox>
+            <Button fx:id="deleteDollButton" mnemonicParsing="false" onAction="#handleDeleteDoll" prefHeight="40.0" prefWidth="90.0" style="-fx-background-color: ff3333;" text="Delete Doll">
+               <VBox.margin>
+                  <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+               </VBox.margin>
+            </Button>
          </children>
+         <padding>
+            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+         </padding>
       </VBox>
-      <Button fx:id="saveButton" layoutX="178.0" layoutY="410.0" mnemonicParsing="false" onAction="#handleSaveDescription" prefHeight="41.0" prefWidth="90.0" text="Save" />
-      <Button fx:id="clearButton" layoutX="333.0" layoutY="410.0" mnemonicParsing="false" onAction="#handleClearDescription" prefHeight="41.0" prefWidth="90.0" text="Clear" />
-      <Button fx:id="deleteDollButton" layoutX="496.0" layoutY="439.0" mnemonicParsing="false" onAction="#handleDeleteDoll" prefHeight="41.0" prefWidth="90.0" style="-fx-background-color: ff3333;" text="Delete Doll" />
-   </children>
-</AnchorPane>
+   </content>
+</ScrollPane>

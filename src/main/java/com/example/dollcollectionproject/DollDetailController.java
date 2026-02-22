@@ -18,6 +18,8 @@ public class DollDetailController {
     @FXML
     private TextArea descriptionArea;
 
+    private DatabaseManager dbManager = new DatabaseManager();
+
     private Doll currentDoll;
 
     private javafx.collections.ObservableList<Doll> parentList;
@@ -30,10 +32,11 @@ public class DollDetailController {
         descriptionArea.setText(doll.getDescription());
 
         try {
-            Image img = new Image(getClass().getResourceAsStream(doll.getImagePath()));
+            // Removed getResourceAsStream(); Use "file:" + the absolute path for sql updated version of code
+            Image img = new Image("file:" + doll.getImagePath());
             detailImage.setImage(img);
         } catch (Exception e) {
-            System.out.println("Image not found in closet!");
+            System.out.println("Image not found: " + doll.getImagePath());
         }
     }
 
@@ -88,12 +91,14 @@ public class DollDetailController {
     }
 
     private void terminateDoll() {
-        // remove from the ObservableList (which automatically updates the UI)
+        // 1. Kill it in SQL using the Unique ID
+        dbManager.deleteDollById(currentDoll.getId());
+
+        // 2. Kill it in the UI
         parentList.remove(currentDoll);
 
-        // kill the window after deleting object, to avoid button clicks etc.
+        // 3. Close window
         javafx.stage.Stage stage = (javafx.stage.Stage) descriptionArea.getScene().getWindow();
         stage.close();
-        System.out.println("Object destroyed and window closed.");
     }
 }
