@@ -8,7 +8,10 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
@@ -24,7 +27,12 @@ public class HelloController {
     private TextField nameInput;
     // Creates link to our Database Manager
     private DatabaseManager dbManager = new DatabaseManager();
+    // Stores the path from the picker
+    private String selectedImagePath = "";
 
+
+
+    // Behaves just like main method in normal java code
     @FXML
     public void initialize() {
         // Grab the list of dolls from your seeder
@@ -48,6 +56,7 @@ public class HelloController {
         });
     }
 
+    // Displaying ListView<Doll> dollList on MAIN WINDOW
     private void setCustomListCell() {
         dollList.setCellFactory(param -> new javafx.scene.control.ListCell<>() {
             private final javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView();
@@ -81,25 +90,46 @@ public class HelloController {
         });
     }
 
+    // This button opens the Windows/Android file picker. It's for search, not for save!
     @FXML
-    protected void onAddDollButtonClick() {
-        String name = nameInput.getText();
+    protected void onPickFileClick() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Select Doll Image");
 
-        // For now, we are simulating the path.
-        // Later, we will use a FileChooser to get the real path from your closet folder.
-        String imagePath = "resources/com.example.dollcollectionproject/closet/" + name + ".jpg";
+        // Ensure the user only sees image folders
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg")
+        );
 
-        if (!name.isEmpty()) {
-            // 2. This sends the Doll data to the SQL file!
-            dbManager.addDoll(name, imagePath);
+        Stage stage = (Stage) nameInput.getScene().getWindow();
+        File file = fileChooser.showOpenDialog(stage);
 
-            // 3. Clear the input so you can add another doll
-            nameInput.clear();
-        } else {
-            System.out.println("Please enter a doll name!");
+        if (file != null) {
+            // We save the path so we can use it in the Save function below
+            selectedImagePath = file.getAbsolutePath();
+            System.out.println("Image ready: " + selectedImagePath);
         }
     }
 
+    // This button actually talks to the SQL database. It's for actual save.
+    @FXML
+    protected void onSaveClick() {
+        String name = nameInput.getText();
+
+        if (!name.isEmpty() && !selectedImagePath.isEmpty()) {
+            // Adding the doll to the SQL 'closet.db'
+            dbManager.addDoll(name, selectedImagePath);
+
+            // Clearing everything for the next doll
+            nameInput.clear();
+            selectedImagePath = "";
+            System.out.println("Doll added successfully!");
+        } else {
+            System.out.println("Error: Name or Image missing!");
+        }
+    }
+
+    // Displaying new window with DOLL DETAILS
     private void openDetailWindow(Doll selectedDoll) {
         try {
             // point to the new FXML file and load root
