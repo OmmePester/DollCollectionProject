@@ -5,19 +5,52 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-
 <ScrollPane fitToWidth="true" hbarPolicy="NEVER" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.dollcollectionproject.DollDetailController">
    <content>
-      <VBox alignment="CENTER" prefHeight="600.0" prefWidth="400.0" spacing="20.0">
+      <VBox alignment="CENTER" prefHeight="600.0" prefWidth="400.0" spacing="10.0">
          <children>
-            <ImageView fx:id="detailImage" fitHeight="150.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" />
-            <Label fx:id="detailName" alignment="CENTER" contentDisplay="CENTER" prefHeight="30.0" prefWidth="245.0" text="Name" />
-            <TextArea fx:id="descriptionArea" prefHeight="99.0" prefWidth="360.0" />
-            <HBox alignment="CENTER" prefHeight="85.0" prefWidth="360.0">
+            <ImageView fx:id="detailImage" fitHeight="360.0" fitWidth="360.0" pickOnBounds="true" preserveRatio="true" />
+            <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="10.0">
+               <children>
+                  <Label prefWidth="100.0" text="Name:" textAlignment="RIGHT" />
+                  <TextField fx:id="detailName" HBox.hgrow="ALWAYS" />
+               </children>
+            </HBox>
+            <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="10.0">
+               <children>
+                  <Label prefWidth="100.0" text="Hint:" textAlignment="RIGHT" />
+                  <TextField fx:id="hintField" HBox.hgrow="ALWAYS" />
+               </children>
+            </HBox>
+            <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="10.0">
+               <children>
+                  <TextArea fx:id="descriptionArea" prefHeight="99.0" prefWidth="360.0" promptText="Description" text="&#10;" />
+               </children>
+            </HBox>
+            <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="10.0">
+               <children>
+                  <Label prefWidth="100.0" text="Brand:" textAlignment="RIGHT" />
+                  <TextField fx:id="brandField" HBox.hgrow="ALWAYS" />
+               </children>
+            </HBox>
+            <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="10.0">
+               <children>
+                  <Label prefWidth="100.0" text="Model:" textAlignment="RIGHT" />
+                  <TextField fx:id="modelField" HBox.hgrow="ALWAYS" />
+               </children>
+            </HBox>
+            <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="10.0">
+               <children>
+                  <Label prefWidth="100.0" text="Year:" textAlignment="RIGHT" />
+                  <TextField fx:id="yearField" HBox.hgrow="ALWAYS" />
+               </children>
+            </HBox>
+            <HBox alignment="CENTER" prefHeight="85.0" prefWidth="360.0" spacing="10.0">
                <children>
                   <Button fx:id="saveButton" mnemonicParsing="false" onAction="#handleSaveDescription" prefHeight="40.0" prefWidth="90.0" text="Save">
                      <HBox.margin>
