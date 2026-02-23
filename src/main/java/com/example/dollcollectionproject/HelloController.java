@@ -6,6 +6,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -74,14 +75,12 @@ public class HelloController {
                     setText(null);
                     setGraphic(null);
                 } else {
-//////LATER UNCOMMENT:
-//                    String hintText = (doll.getHint() == null || doll.getHint().isEmpty())
-//                            ? ""
-//                            : " (Hint: " + doll.getHint() + ")";
+                    // Displays hint of Doll next to name (could be useful to remember collection elements)
+                    String hintText = (doll.getHint() == null || doll.getHint().isEmpty())
+                            ? ""
+                            : " (Hint: " + doll.getHint() + ")";
+                    setText(doll.getName() + hintText);
 
-                    // 1. Set the text
-                    setText(doll.getName());
-/////////LATER ADD: setText(doll.getName() + hintText);
                     // 2. Load the image from your 'closet', but now with full path (for sql etc.)
                     try {
                         // We add "file:" to the start so Java knows to look on your C: drive
@@ -178,10 +177,17 @@ public class HelloController {
             stage.setTitle("Doll Profile: " + selectedDoll.getName());
             stage.setScene(new Scene(root));
 
-            // --- THE MAGIC LINE ---
+            //----THE MODALITY LINE----
             // This makes the window "Modal", blocking interaction with the main list, and preventing from opening many doll detail windows
             stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
-            // ----------------------
+
+            //----THE REFRESHING LIST LINE----
+            // This makes the window refresh list every time detail window closes
+            stage.setOnHiding(event -> {
+                System.out.println("Detail window closed. Refreshing main list...");
+                // Pull fresh data from SQL so the new Hint shows up
+                dollList.getItems().setAll(dbManager.getAllDolls());
+            });
 
             stage.show();
 

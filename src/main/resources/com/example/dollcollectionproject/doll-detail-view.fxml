@@ -10,7 +10,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<ScrollPane fitToWidth="true" hbarPolicy="NEVER" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.dollcollectionproject.DollDetailController">
+<ScrollPane fx:id="detailScrollPane" fitToWidth="true" hbarPolicy="NEVER" pannable="true" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.dollcollectionproject.DollDetailController">
    <content>
       <VBox alignment="CENTER" prefHeight="600.0" prefWidth="400.0" spacing="10.0">
          <children>
@@ -27,9 +27,9 @@
                   <TextField fx:id="hintField" HBox.hgrow="ALWAYS" />
                </children>
             </HBox>
-            <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="10.0">
+            <HBox alignment="CENTER_LEFT" minHeight="100.0" prefHeight="100.0" prefWidth="200.0" spacing="10.0" VBox.vgrow="ALWAYS">
                <children>
-                  <TextArea fx:id="descriptionArea" prefHeight="99.0" prefWidth="360.0" promptText="Description" text="&#10;" />
+                  <TextArea fx:id="descriptionArea" prefHeight="100.0" prefWidth="360.0" promptText="Life Story" text="&#10;" />
                </children>
             </HBox>
             <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="10.0">
@@ -57,7 +57,7 @@
                         <Insets right="20.0" />
                      </HBox.margin>
                   </Button>
-                  <Button fx:id="clearButton" mnemonicParsing="false" onAction="#handleClearDescription" prefHeight="40.0" prefWidth="90.0" text="Clear">
+                  <Button fx:id="clearButton" mnemonicParsing="false" onAction="#handleClearAllFields" prefHeight="40.0" prefWidth="90.0" text="Clear">
                      <HBox.margin>
                         <Insets left="20.0" />
                      </HBox.margin>
