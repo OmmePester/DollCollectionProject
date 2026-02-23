@@ -3,6 +3,7 @@ package com.example.dollcollectionproject;
 import com.example.dollcollectionproject.model.Doll;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
@@ -11,8 +12,9 @@ import javafx.scene.image.ImageView;
 public class DollDetailController {
 
     @FXML
+    private ScrollPane detailScrollPane;
+    @FXML
     private ImageView detailImage;
-
     // Use TextField for everything you want the user to be able to edit
     @FXML
     private TextField detailName;
@@ -33,10 +35,30 @@ public class DollDetailController {
 
     private javafx.collections.ObservableList<Doll> parentList;
 
+    // To be able to control the scroll speed
+//    @FXML
+//    public void initialize() {
+//        if (detailScrollPane != null) {
+//            detailScrollPane.getContent().setOnScroll(scrollEvent -> {
+//                double deltaY = scrollEvent.getDeltaY() * 19;
+//                double height = detailScrollPane.getContent().getBoundsInLocal().getHeight();
+//                detailScrollPane.setVvalue(detailScrollPane.getVvalue() - deltaY / height);
+//            });
+//        }
+//    }
+
     // This method will be called by the Main Controller to "send" the doll data here
     public void setDoll(Doll doll, javafx.collections.ObservableList<Doll> list) {
         this.currentDoll = doll;    // to change the doll whose details we view
         this.parentList = list;     // to change main list
+
+        detailScrollPane.getContent().setOnScroll(scrollEvent -> {
+            double deltaY = scrollEvent.getDeltaY() * 7;
+            double height = detailScrollPane.getContent().getBoundsInLocal().getHeight();
+            detailScrollPane.setVvalue(detailScrollPane.getVvalue() - deltaY / height);
+        });
+
+
 
         // Filling all fields from the currentDoll object
         detailName.setText(doll.getName());
@@ -94,15 +116,17 @@ public class DollDetailController {
         System.out.println("Success: Entire profile updated in SQL.");
     }
 
-    /////////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////////
-    // HERE THIS CLEARS NOT ALL !!!! WE NEED TO BE ABLE TO CLEAR ALL FIELDS !!!!
+    // Method that clears fields of detail window (comment/uncomment according to your own needs)
     @FXML
-    private void handleClearDescription() {
-        //  ONLY clears the visual box, never updates without handleSaveDescription
+    private void handleClearAllFields() {
+        // Decide on what to clear (for now all except name)
+        detailName.clear();
+        hintField.clear();
         descriptionArea.clear();
+        brandField.clear();
+        modelField.clear();
+        yearField.clear();
+
         System.out.println("Visual area cleared. Object remains unchanged until Save is clicked.");
     }
 
