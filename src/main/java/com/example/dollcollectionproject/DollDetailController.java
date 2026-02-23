@@ -4,6 +4,7 @@ import com.example.dollcollectionproject.model.Doll;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
@@ -12,11 +13,19 @@ public class DollDetailController {
     @FXML
     private ImageView detailImage;
 
+    // Use TextField for everything you want the user to be able to edit
     @FXML
-    private Label detailName;
-
+    private TextField detailName;
+    @FXML
+    private TextField hintField;
     @FXML
     private TextArea descriptionArea;
+    @FXML
+    private TextField brandField;
+    @FXML
+    private TextField modelField;
+    @FXML
+    private TextField yearField;
 
     private DatabaseManager dbManager = new DatabaseManager();
 
@@ -26,10 +35,16 @@ public class DollDetailController {
 
     // This method will be called by the Main Controller to "send" the doll data here
     public void setDoll(Doll doll, javafx.collections.ObservableList<Doll> list) {
-        this.currentDoll = doll;
-        this.parentList = list;   // to change main list
+        this.currentDoll = doll;    // to change the doll whose details we view
+        this.parentList = list;     // to change main list
+
+        // Filling all fields from the currentDoll object
         detailName.setText(doll.getName());
+        hintField.setText(doll.getHint());
         descriptionArea.setText(doll.getDescription());
+        brandField.setText(doll.getBrand());
+        modelField.setText(doll.getModel());
+        yearField.setText(String.valueOf(doll.getYear())); // Convert int to String for the UI
 
         try {
             // Removed getResourceAsStream(); Use "file:" + the absolute path for sql updated version of code
@@ -42,11 +57,48 @@ public class DollDetailController {
 
     @FXML
     private void handleSaveDescription() {
-        // ONLY here we SAVE description
-        currentDoll.setDescription(descriptionArea.getText());
-        System.out.println("Persistent state updated for: " + currentDoll.getName());
+        // 1. Collect data from UI (Assuming these fx:ids exist in your builder)
+        String newName = detailName.getText(); // If your name is a Label, use currentDoll.getName()
+        String newHint = hintField.getText();
+        String newDesc = descriptionArea.getText();
+        String newBrand = brandField.getText();
+        String newModel = modelField.getText();
+
+        // Convert year text to number safely
+        int newYear = 0;
+        try {
+            newYear = Integer.parseInt(yearField.getText());
+        } catch (NumberFormatException e) {
+            System.out.println("Year was not a number, defaulting to 0");
+        }
+
+        // 2. Update the Java Object in memory
+        currentDoll.setName(newName);
+        currentDoll.setHint(newHint);
+        currentDoll.setDescription(newDesc);
+        currentDoll.setBrand(newBrand);
+        currentDoll.setModel(newModel);
+        currentDoll.setYear(newYear);
+
+        // 3. One single call to save everything to the closet.db
+        dbManager.updateFullDollDetails(
+                currentDoll.getId(),
+                newName,
+                newHint,
+                newDesc,
+                newBrand,
+                newModel,
+                newYear
+        );
+
+        System.out.println("Success: Entire profile updated in SQL.");
     }
 
+    /////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////
+    // HERE THIS CLEARS NOT ALL !!!! WE NEED TO BE ABLE TO CLEAR ALL FIELDS !!!!
     @FXML
     private void handleClearDescription() {
         //  ONLY clears the visual box, never updates without handleSaveDescription

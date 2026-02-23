@@ -56,7 +56,7 @@ public class DatabaseManager {
     public List<Doll> getAllDolls() {
         List<Doll> dolls = new ArrayList<>();
         // MUST INCLUDE "id" in the SELECT statement
-        String sql = "SELECT id, name, image_path FROM items";
+        String sql = "SELECT * FROM items";
 
         try (Connection conn = this.connect();
              Statement stmt = conn.createStatement();
@@ -65,16 +65,26 @@ public class DatabaseManager {
             while (rs.next()) {
                 // 2. Grab the REAL ID from the database row
                 int id = rs.getInt("id");
+                String imagePath = rs.getString("image_path");
                 String name = rs.getString("name");
-                String path = rs.getString("image_path");
+                String hint = rs.getString("hint");
+                String description = rs.getString("description");
+                String brand = rs.getString("brand");
+                String model = rs.getString("model");
+                int year = rs.getInt("year");
 
-                // 3. Use the 5-argument constructor (id, name, year, brand, path)
+
+                // 8-argument constructor (id, imagePath, name, hint, description, brand, model, year)
                 Doll doll = new Doll(
+                        id,
+                        imagePath,
                         name,
-                        0,          // Placeholder year
-                        "Unknown",  // Placeholder brand
-                        path,
-                        id
+                        hint,
+                        description,
+                        brand,
+                        model,
+                        year
+
                 );
                 dolls.add(doll);
             }
@@ -82,5 +92,28 @@ public class DatabaseManager {
             System.out.println("SQL Load Error: " + e.getMessage());
         }
         return dolls;
+    }
+
+    //
+    public void updateFullDollDetails(int id, String name, String hint, String description, String brand, String model, int year) {
+        // We use the ID to find the right doll, then update every other column
+        String sql = "UPDATE items SET name = ?, hint = ?, description = ?, brand = ?, model = ?, year = ? WHERE id = ?";
+
+        try (Connection conn = this.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, name);
+            pstmt.setString(2, hint);
+            pstmt.setString(3, description);
+            pstmt.setString(4, brand);
+            pstmt.setString(5, model);
+            pstmt.setInt(6, year);
+            pstmt.setInt(7, id); // The anchor
+
+            pstmt.executeUpdate();
+            System.out.println("SQL: Data successfully synced for ID " + id);
+        } catch (SQLException e) {
+            System.out.println("SQL Update Error: " + e.getMessage());
+        }
     }
 }
