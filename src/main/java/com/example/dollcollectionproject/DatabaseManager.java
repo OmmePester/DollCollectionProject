@@ -15,29 +15,40 @@ public class DatabaseManager {
         return DriverManager.getConnection(URL);
     }
 
-    // Method to add a Doll entry
+    // This method adds doll with its path (that will be updated anyway) into sql db, return int ID
     public int addDoll(String name, String path) {
         String sql = "INSERT INTO items(name, image_path) VALUES(?, ?)";
-        int generatedId = -1;
 
         try (Connection conn = this.connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             pstmt.setString(1, name);
             pstmt.setString(2, path);
             pstmt.executeUpdate();
 
-            // This grabs the ID that was just created
             ResultSet rs = pstmt.getGeneratedKeys();
             if (rs.next()) {
-                generatedId = rs.getInt(1);
+                return rs.getInt(1);    // returns the ID (autoincrement)
             }
-
-            System.out.println("Doll '" + name + "' registered in SQL!");
         } catch (SQLException e) {
             System.out.println("Error saving doll: " + e.getMessage());
         }
-        return generatedId;    // This sends the ID back to the Controller
+        return -1;
+    }
+
+    // This method updates the path once the file is renamed to "doll_ID.jpg"
+    public void updateImagePath(int id, String fileName) {
+        String sql = "UPDATE items SET image_path = ? WHERE id = ?";
+
+        try (Connection conn = this.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, fileName);
+            pstmt.setInt(2, id);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Error updating path: " + e.getMessage());
+        }
     }
 
     // Deleting Dolls by ID, because that is pro way, not searching by some variable
@@ -114,6 +125,38 @@ public class DatabaseManager {
             System.out.println("SQL: Data successfully synced for ID " + id);
         } catch (SQLException e) {
             System.out.println("SQL Update Error: " + e.getMessage());
+        }
+    }
+
+    // This method completely DELETES ALL DATA IN SQL AND 'CLOSET' FOLDER!!!!
+    public void fullWipeOut() {
+        // this part deletes SQL Data
+        String deleteSql = "DELETE FROM items";                                  // deletes all data in rows
+        String resetIdSql = "DELETE FROM sqlite_sequence WHERE name='items'";    // resets counter, id starts from 1
+
+        try (Connection conn = this.connect();
+             java.sql.PreparedStatement pstmt1 = conn.prepareStatement(deleteSql);
+             java.sql.PreparedStatement pstmt2 = conn.prepareStatement(resetIdSql)) {
+            pstmt1.executeUpdate();    // 1st stmt where all data is deleted
+            pstmt2.executeUpdate();    // 2nd stmt is the one that resets inner counter of sql to 0, and IDs start from 1 again
+            System.out.println("SQL Table cleared and ID counter reset to 1.");
+        } catch (java.sql.SQLException e) {
+            System.out.println("SQL Wipe Error: " + e.getMessage());
+        }
+
+        // this part deletes images in the 'closet' folder
+        java.io.File closetFolder = new java.io.File("src/main/resources/com/example/dollcollectionproject/closet/");
+        java.io.File[] files = closetFolder.listFiles();
+
+        if (files != null) {
+            for (java.io.File file : files) {
+                // for safety, we only delete if it starts with 'doll_'
+                if (file.getName().startsWith("doll_")) {
+                    if (file.delete()) {
+                        System.out.println("Deleted file: " + file.getName());
+                    }
+                }
+            }
         }
     }
 }

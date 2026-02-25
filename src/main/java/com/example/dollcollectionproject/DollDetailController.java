@@ -35,30 +35,27 @@ public class DollDetailController {
 
     private javafx.collections.ObservableList<Doll> parentList;
 
-    // To be able to control the scroll speed
-//    @FXML
-//    public void initialize() {
-//        if (detailScrollPane != null) {
-//            detailScrollPane.getContent().setOnScroll(scrollEvent -> {
-//                double deltaY = scrollEvent.getDeltaY() * 19;
-//                double height = detailScrollPane.getContent().getBoundsInLocal().getHeight();
-//                detailScrollPane.setVvalue(detailScrollPane.getVvalue() - deltaY / height);
-//            });
-//        }
-//    }
 
-    // This method will be called by the Main Controller to "send" the doll data here
+    // This method is called by the Main Controller (HelloController) to pass selected Doll's info
     public void setDoll(Doll doll, javafx.collections.ObservableList<Doll> list) {
         this.currentDoll = doll;    // to change the doll whose details we view
         this.parentList = list;     // to change main list
 
+        // This part makes notoriously slow ScrollPane to scroll faster
         detailScrollPane.getContent().setOnScroll(scrollEvent -> {
             double deltaY = scrollEvent.getDeltaY() * 7;
             double height = detailScrollPane.getContent().getBoundsInLocal().getHeight();
             detailScrollPane.setVvalue(detailScrollPane.getVvalue() - deltaY / height);
         });
 
-
+        // Again we use path of folder closet to load Doll image in detail window
+        String folderPath = "src/main/resources/com/example/dollcollectionproject/closet/";
+        try {
+            javafx.scene.image.Image img = new javafx.scene.image.Image("file:" + folderPath + doll.getImagePath());
+            detailImage.setImage(img);
+        } catch (Exception e) {
+            System.out.println("Detail Image not found at: " + folderPath + doll.getImagePath());
+        }
 
         // Filling all fields from the currentDoll object
         detailName.setText(doll.getName());
@@ -68,15 +65,26 @@ public class DollDetailController {
         modelField.setText(doll.getModel());
         yearField.setText(String.valueOf(doll.getYear())); // Convert int to String for the UI
 
-        try {
-            // Removed getResourceAsStream(); Use "file:" + the absolute path for sql updated version of code
-            Image img = new Image("file:" + doll.getImagePath());
-            detailImage.setImage(img);
-        } catch (Exception e) {
-            System.out.println("Image not found: " + doll.getImagePath());
-        }
+        // run formatter methods and set text formatter here
+        detailName.setTextFormatter(getLetterFormatter());
+        brandField.setTextFormatter(getLetterFormatter());
+        modelField.setTextFormatter(getLetterFormatter());
+        yearField.setTextFormatter(getNumberFormatter());
     }
 
+    // This method formats numbers (for year, max 4 digits)
+    private javafx.scene.control.TextFormatter<String> getNumberFormatter() {
+        return new javafx.scene.control.TextFormatter<>(change ->
+                (change.getText().matches("[0-9]*") && change.getControlNewText().length() <= 4) ? change : null);
+    }
+
+    // This method formats letters
+    private javafx.scene.control.TextFormatter<String> getLetterFormatter() {
+        return new javafx.scene.control.TextFormatter<>(change ->
+                change.getText().matches("[a-zA-Z\\s]*") ? change : null);
+    }
+
+    // Method that saves fields of detail window
     @FXML
     private void handleSaveDescription() {
         // 1. Collect data from UI (Assuming these fx:ids exist in your builder)
@@ -130,25 +138,26 @@ public class DollDetailController {
         System.out.println("Visual area cleared. Object remains unchanged until Save is clicked.");
     }
 
+    // Doll Deleting Method (Step 1), initial selection, confirming, redirecting to security check
     @FXML
     private void handleDeleteDoll() {
-        // STEP 1: The "Simple" Yes/No Confirmation
+        // selecting part
         javafx.scene.control.Alert confirmAlert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION);
         confirmAlert.setTitle("Confirm Murder");
         confirmAlert.setHeaderText("Are you sure you want to KILL " + currentDoll.getName() + "????");
         confirmAlert.setContentText("This action is EXTREMELY UNETHICAL!!!!");
 
-        // Java 8+ approach: handle the button choice
+        // confirming part
         confirmAlert.showAndWait().ifPresent(response -> {
             if (response == javafx.scene.control.ButtonType.OK) {
-                // STEP 2: The "Hardcore" Security Code
-                triggerSecurityChallenge();
+                triggerSecurityChallenge();    // redirecting to security check
             } else {
                 System.out.println("Deletion cancelled at Step 1.");
             }
         });
     }
 
+    // Doll Deleting Method (Step 2), passing the 6-digit security check and verifying deletion
     private void triggerSecurityChallenge() {
         // Generate code
         String securityCode = String.valueOf(new java.util.Random().nextInt(900000) + 100000);
@@ -166,14 +175,25 @@ public class DollDetailController {
         });
     }
 
+    // Doll Deleting Method (Step 3), actually deleting from everywhere
     private void terminateDoll() {
-        // 1. Kill it in SQL using the Unique ID
+        // firstly delete IMAGE FILE from folder 'closet'
+        String folderPath = "src/main/resources/com/example/dollcollectionproject/closet/";
+        java.io.File fileToDelete = new java.io.File(folderPath + currentDoll.getImagePath());
+
+        if (fileToDelete.exists()) {
+            if (fileToDelete.delete()) {
+                System.out.println("Physical image deleted: " + currentDoll.getImagePath());
+            }
+        }
+
+        // then delete it in SQL with unique ID
         dbManager.deleteDollById(currentDoll.getId());
 
-        // 2. Kill it in the UI
+        // then REMOVE it from list, to not display in main window
         parentList.remove(currentDoll);
 
-        // 3. Close window
+        // lastly CLOSE detail window
         javafx.stage.Stage stage = (javafx.stage.Stage) descriptionArea.getScene().getWindow();
         stage.close();
     }

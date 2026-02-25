@@ -6,7 +6,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.ListView;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -15,6 +14,8 @@ import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 
@@ -64,36 +65,40 @@ public class HelloController {
     // Displaying ListView<Doll> dollList on MAIN WINDOW
     private void setCustomListCell() {
         dollList.setCellFactory(param -> new javafx.scene.control.ListCell<>() {
+            // Manually handle builders detail here to be able to display numbers on left. ListView builder cant arrange all we want.
+            private final javafx.scene.layout.HBox container = new javafx.scene.layout.HBox(25);    // arrange spacing as you want
+            private final javafx.scene.control.Label numberLabel = new javafx.scene.control.Label();
             private final javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView();
-
+            private final javafx.scene.control.Label nameLabel = new javafx.scene.control.Label();
+            {
+                // creating container to arrange specific desired order (user needs can change)
+                container.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+                container.getChildren().addAll(numberLabel, imageView, nameLabel);
+            }
             @Override
             protected void updateItem(Doll doll, boolean empty) {
                 // This tells parent ListCell provided by JavaFX to prepare basic setup before we start customizing
                 super.updateItem(doll, empty);
 
                 if (empty || doll == null) {
-                    setText(null);
                     setGraphic(null);
                 } else {
-                    // Displays hint of Doll next to name (could be useful to remember collection elements)
-                    String hintText = (doll.getHint() == null || doll.getHint().isEmpty())
-                            ? ""
-                            : " (Hint: " + doll.getHint() + ")";
-                    setText(doll.getName() + hintText);
+                    // arrange ordinal numbers
+                    numberLabel.setText((getIndex() + 1) + ".");
 
-                    // 2. Load the image from your 'closet', but now with full path (for sql etc.)
-                    try {
-                        // We add "file:" to the start so Java knows to look on your C: drive
-                        javafx.scene.image.Image img = new javafx.scene.image.Image("file:" + doll.getImagePath());
+                    // arrange dolls images
+                    String folderPath = "src/main/resources/com/example/dollcollectionproject/closet/";
+                    javafx.scene.image.Image img = new javafx.scene.image.Image("file:" + folderPath + doll.getImagePath());
+                    imageView.setImage(img);
+                    imageView.setFitWidth(75);    // arrange image with as you want
+                    imageView.setPreserveRatio(true);
 
-                        imageView.setImage(img);
-                        imageView.setFitWidth(75);  // Make it a small thumbnail
-                        imageView.setPreserveRatio(true);
+                    // arrange hints (if exist)
+                    String hintText = (doll.getHint() == null || doll.getHint().isEmpty()) ? "" : " (" + doll.getHint() + ")";
+                    nameLabel.setText(doll.getName() + hintText);
 
-                        setGraphic(imageView); // Put the image next to the text
-                    } catch (Exception e) {
-                        System.out.println("Could not find image: " + doll.getImagePath());
-                    }
+                    // finally display container
+                    setGraphic(container);
                 }
             }
         });
@@ -139,21 +144,44 @@ public class HelloController {
 
     }
 
-    // This button actually talks to the SQL database. It's for actual save.
+    // This button actually talks to the SQL database. It's for actual save. addDoll()
     @FXML
     protected void onSaveClick() {
         String name = nameInput.getText();
 
         if (!name.isEmpty() && !selectedImagePath.isEmpty()) {
-            // Adding the doll to the SQL 'closet.db'
-            dbManager.addDoll(name, selectedImagePath);
-            // REFRESH THE LIST:
+            // 1. Add doll to SQL and CATCH the new ID
+            int newId = dbManager.addDoll(name, selectedImagePath);
+
+            if (newId != -1) {
+                try {
+                    // 2. Prepare the new filename using the ID
+                    String extension = selectedImagePath.substring(selectedImagePath.lastIndexOf("."));
+                    String newFileName = "doll_" + newId + extension;
+
+                    // 3. Define the destination inside your 'closet' resources folder
+                    File sourceFile = new File(selectedImagePath);
+                    Path destPath = Paths.get("src/main/resources/com/example/dollcollectionproject/closet/" + newFileName);
+
+                    // 4. Physical Copy/Paste into the project folder
+                    java.nio.file.Files.copy(sourceFile.toPath(), destPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+                    // 5. Update SQL to point to the NEW local filename instead of the old desktop path
+                    dbManager.updateImagePath(newId, newFileName);
+
+                    System.out.println("Doll added and image saved to closet folder!");
+                } catch (Exception e) {
+                    System.out.println("File copy failed: " + e.getMessage());
+                }
+            }
+
+            // REFRESH THE LIST!!!! to show the changes instantly after save
             dollList.getItems().setAll(dbManager.getAllDolls());
+
             // Clearing everything for the next doll sql entry
             nameInput.clear();
             selectedImagePath = "";
             imagePreview.setImage(null);
-            System.out.println("Doll added successfully!");
         } else {
             System.out.println("Error: Name or Image missing!");
         }
