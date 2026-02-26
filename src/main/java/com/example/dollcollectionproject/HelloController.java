@@ -1,12 +1,14 @@
 package com.example.dollcollectionproject;
 
 import com.example.dollcollectionproject.model.Doll;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
@@ -17,7 +19,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-
+import java.util.Set;
+import java.util.stream.Collectors;
 
 
 public class HelloController {
@@ -31,6 +34,16 @@ public class HelloController {
     // The field where you type the Doll's name
     @FXML
     private TextField nameInput;
+    // Add this FXML field (make sure the fx:id in Scene Builder is 'searchField')
+    @FXML
+    private TextField searchField;
+    // This one is for filtering
+    @FXML
+    private MenuButton filterMenu;
+
+    // variable of type FilteredList to manage the search suggestions
+    private FilteredList<Doll> filteredData;
+    private ObservableList<Doll> allDolls;
     // Creates link to our Database Manager
     private DatabaseManager dbManager = new DatabaseManager();
     // Stores the path from the picker, and store last folder for next use :)
@@ -41,22 +54,31 @@ public class HelloController {
     // Behaves just like main method in normal java code
     @FXML
     public void initialize() {
-        // Ask the DatabaseManager for the REAL list of dolls
-        List<Doll> data = dbManager.getAllDolls();
-        // Clean before using, just in case
-        dollList.getItems().clear();
-        // Just add the whole Doll objects
-        dollList.getItems().addAll(data);
+        // 1. Get the real list from DB and save it to our master variable
+        allDolls = FXCollections.observableArrayList(dbManager.getAllDolls());
 
-        // Set the "Cell Factory" (The instructions on how to draw a Doll)
+        // 2. Wrap it in a FilteredList (p -> true means "show all" by default)
+        filteredData = new FilteredList<>(allDolls, p -> true);
+
+        // 3. Bind the filtered data to the UI List
+        dollList.setItems(filteredData);
+
+        // 4. THE SEARCH LOGIC (Updated to call the combined filter brain)
+        searchField.textProperty().addListener((obs, oldVal, newVal) -> {
+            // [MY ADDITION: We call applyFilters to ensure Search + Menu work together]
+            applyFilters();
+        });
+
+        // [MY ADDITION: Sets up the sub-menus for Brand/Model]
+        setupFilterMenu();
+
+        // Instructions for drawing the cells
         setCustomListCell();
 
-        // Add listener to open new window with details, AND CLEAR SELECTION
+        // Listener for opening detail window
         dollList.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
                 openDetailWindow(newVal);
-
-                // clear selection so the next click (even on the same item) works
                 javafx.application.Platform.runLater(() -> dollList.getSelectionModel().clearSelection());
             }
         });
@@ -101,6 +123,80 @@ public class HelloController {
                     setGraphic(container);
                 }
             }
+        });
+    }
+
+    // [MY ADDITION: This builds the cascading "Suggestions" under the Filter button]
+    private void setupFilterMenu() {
+        filterMenu.getItems().clear();
+
+        // Initial Category suggestions
+        Menu brandMenu = new Menu("By Brand");
+        Menu modelMenu = new Menu("By Model");
+        MenuItem clearItem = new MenuItem("Clear All Filters");
+
+        // Logic to extract only unique values from your objects
+        Set<String> brands = allDolls.stream()
+                .map(Doll::getBrand)
+                .filter(s -> s != null && !s.isEmpty())
+                .collect(Collectors.toSet());
+
+        Set<String> models = allDolls.stream()
+                .map(Doll::getModel)
+                .filter(s -> s != null && !s.isEmpty())
+                .collect(Collectors.toSet());
+
+        // Fill the Brand sub-menu
+        for (String b : brands) {
+            MenuItem item = new MenuItem(b);
+            item.setOnAction(e -> {
+                filterMenu.setText("Brand: " + b);
+                applyFilters();
+            });
+            brandMenu.getItems().add(item);
+        }
+
+        // Fill the Model sub-menu
+        for (String m : models) {
+            MenuItem item = new MenuItem(m);
+            item.setOnAction(e -> {
+                filterMenu.setText("Model: " + m);
+                applyFilters();
+            });
+            modelMenu.getItems().add(item);
+        }
+
+        clearItem.setOnAction(e -> {
+            filterMenu.setText("Filter");
+            applyFilters();
+        });
+
+        filterMenu.getItems().addAll(brandMenu, modelMenu, new SeparatorMenuItem(), clearItem);
+    }
+
+    // [MY ADDITION: The logic that actually filters the list based on Search AND Menu]
+    private void applyFilters() {
+        String newVal = searchField.getText(); // Keeping your variable name style
+        String currentFilter = filterMenu.getText();
+
+        filteredData.setPredicate(doll -> {
+            // --- YOUR SEARCH LOGIC ---
+            boolean matchesSearch = true;
+            if (newVal != null && newVal.length() >= 1) {
+                matchesSearch = doll.getName().toLowerCase().startsWith(newVal.toLowerCase());
+            }
+
+            // --- MY FILTER LOGIC ---
+            boolean matchesFilter = true;
+            if (currentFilter.startsWith("Brand: ")) {
+                String brandVal = currentFilter.replace("Brand: ", "");
+                matchesFilter = doll.getBrand() != null && doll.getBrand().equals(brandVal);
+            } else if (currentFilter.startsWith("Model: ")) {
+                String modelVal = currentFilter.replace("Model: ", "");
+                matchesFilter = doll.getModel() != null && doll.getModel().equals(modelVal);
+            }
+
+            return matchesSearch && matchesFilter;
         });
     }
 
@@ -176,7 +272,10 @@ public class HelloController {
             }
 
             // REFRESH THE LIST!!!! to show the changes instantly after save
-            dollList.getItems().setAll(dbManager.getAllDolls());
+            allDolls.setAll(dbManager.getAllDolls());
+
+            // REFRESH THE FILTER MENU!!!! to show new option in filter selection
+            setupFilterMenu();
 
             // Clearing everything for the next doll sql entry
             nameInput.clear();
@@ -198,7 +297,7 @@ public class HelloController {
             DollDetailController controller = loader.getController();
 
             // hand over clicked doll to the new window,
-            controller.setDoll(selectedDoll, dollList.getItems());
+            controller.setDoll(selectedDoll, allDolls);
 
             // pop the window open
             Stage stage = new Stage();
@@ -209,12 +308,13 @@ public class HelloController {
             // This makes the window "Modal", blocking interaction with the main list, and preventing from opening many doll detail windows
             stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
 
-            //----THE REFRESHING LIST LINE----
+            //----THE REFRESHING LIST/FILTER LINE----
             // This makes the window refresh list every time detail window closes
             stage.setOnHiding(event -> {
                 System.out.println("Detail window closed. Refreshing main list...");
                 // Pull fresh data from SQL so the new Hint shows up
-                dollList.getItems().setAll(dbManager.getAllDolls());
+                allDolls.setAll(dbManager.getAllDolls());    // refreshes list
+                setupFilterMenu();                           // refreshes filter menu selections
             });
 
             stage.show();
